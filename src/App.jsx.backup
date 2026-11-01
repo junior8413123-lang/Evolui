@@ -1,0 +1,52 @@
+import React, { useState } from "react";
+import "./App.css";
+
+function App() {
+  const [page, setPage] = useState("Dashboard");
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([{ role: "ai", text: "Olá! Sou o EVOLUI AI. Estou pronto para ajudar sua empresa a crescer. Qual é seu principal desafio hoje?" }]);
+  const [tasks, setTasks] = useState([{ id: 1, title: "Analisar despesas operacionais", detail: "Identificar oportunidades de economia.", status: "Pendente" }, { id: 2, title: "Criar estratégia de vendas", detail: "Desenvolver ações para conquistar clientes.", status: "Pendente" }, { id: 3, title: "Revisar metas financeiras", detail: "Definir objetivos para o próximo mês.", status: "Pendente" }]);
+  const [approvals, setApprovals] = useState(() => {
+    try {
+      const saved = localStorage.getItem("evolui_approvals");
+      return saved ? JSON.parse(saved) : [
+        { id: 1, title: "Criar campanha de divulgação", detail: "Preparar uma campanha para atrair novos clientes.", status: "Aguardando" },
+        { id: 2, title: "Planejar ação de fidelização", detail: "Criar uma estratégia para clientes atuais.", status: "Aguardando" }
+      ];
+    } catch {
+      return [];
+    }
+  });
+  const [goal, setGoal] = useState(10000);
+  const [revenue, setRevenue] = useState(0);
+  function sendMessage(e) {
+    e.preventDefault(); if (!message.trim()) return;
+    const q = message.trim(); setMessages(prev => [...prev, { role: "user", text: q }]); setMessage("");
+    let answer = "Vamos analisar isso juntos! Para recomendar ações adequadas, preciso conhecer melhor sua empresa. Qual é seu principal objetivo e quais são seus desafios atuais?";
+    const lower = q.toLowerCase();
+    if (lower.includes("venda") || lower.includes("faturamento")) answer = "Vamos trabalhar o crescimento das vendas! Recomendo analisar ticket médio, produtos mais vendidos, conversão de clientes e canais de divulgação. Qual é seu faturamento mensal atual?";
+    else if (lower.includes("lucro") || lower.includes("despesa")) answer = "Para melhorar o lucro, vamos analisar custos fixos, variáveis e margem de cada produto ou serviço. Você já possui esses números?";
+    else if (lower.includes("cliente")) answer = "Podemos trabalhar aquisição e fidelização. Vamos analisar de onde vêm seus clientes, quantos voltam a comprar e quanto cada cliente gasta.";
+    else if (lower.includes("meta") || lower.includes("crescer")) answer = "Vamos definir uma meta mensurável, dividir em etapas e acompanhar os resultados. Qual faturamento você deseja alcançar por mês?";
+    setMessages(prev => [...prev, { role: "ai", text: answer }]);
+  }
+  function updateTask(id, status) { setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t)); }
+  function updateApproval(id, status) {
+    setApprovals(prev => {
+      const updated = prev.map(a => a.id === id ? { ...a, status } : a);
+      localStorage.setItem("evolui_approvals", JSON.stringify(updated));
+      return updated;
+    });
+  }
+  const completed = tasks.filter(t => t.status === "Concluída").length;
+  const pending = approvals.filter(a => a.status === "Aguardando").length;
+  const progress = Math.min(100, Math.round(revenue / Math.max(goal, 1) * 100));
+  return <div className="app"><aside className="sidebar"><h1>EVOLUI<span>.</span></h1><p>INTELLIGENCE PLATFORM</p><nav>{["Dashboard", "Inteligência Artificial", "Ações", "Aprovações", "Metas", "Financeiro", "Clientes", "Configurações"].map(name => <a key={name} className={page === name ? "active" : ""} onClick={() => setPage(name)}>{name === "Dashboard" ? "▦" : name === "Inteligência Artificial" ? "✦" : name === "Ações" ? "✓" : name === "Aprovações" ? "◉" : name === "Metas" ? "◎" : name === "Financeiro" ? "▤" : name === "Clientes" ? "♙" : "⚙"} {name}{name === "Aprovações" && pending > 0 ? ` (${pending})` : ""}</a>)}</nav><div className="sidebar-bottom">EVOLUI © 2026</div></aside><main className="main"><header><div><span>EVOLUI INTELLIGENCE PLATFORM</span><h2>{page === "Dashboard" ? "Visão geral" : page}</h2><p>Transformando gestão em crescimento.</p></div><div className="status">● Sistema ativo</div></header>
+  {page === "Dashboard" && <><section className="hero"><div><span>INTELIGÊNCIA EMPRESARIAL</span><h2>Sua empresa pode ir mais longe.</h2><p>Analise, planeje, execute e evolua continuamente.</p><button onClick={() => setPage("Inteligência Artificial")}>Conversar com EVOLUI AI →</button></div><div className="hero-icon">✦</div></section><h3>Indicadores empresariais</h3><section className="cards"><article><span>Faturamento informado</span><strong>R$ {revenue.toLocaleString("pt-BR")},00</strong><small>Dados demonstrativos</small></article><article><span>Lucro líquido</span><strong>R$ 0,00</strong><small>Configure seus custos</small></article><article><span>Ações concluídas</span><strong>{completed}/{tasks.length}</strong><small>Progresso operacional</small></article><article><span>Aprovações pendentes</span><strong>{pending}</strong><small>Decisões aguardando você</small></article></section><section className="bottom"><article className="panel"><h3>Plano de crescimento</h3><p>Acompanhe as ações recomendadas.</p>{tasks.map(t => <div className="mini-task" key={t.id}><span>{t.status === "Concluída" ? "✓" : "○"}</span><div><strong>{t.title}</strong><small>{t.status}</small></div></div>)}<button onClick={() => setPage("Ações")}>Ver todas as ações →</button></article><article className="panel"><div className="ai-icon">✦</div><h3>EVOLUI AI</h3><p>Seu gestor inteligente está pronto para ajudar.</p><button onClick={() => setPage("Inteligência Artificial")}>Iniciar conversa →</button><hr/><p>{pending} decisões aguardando aprovação.</p><button onClick={() => setPage("Aprovações")}>Revisar decisões →</button></article></section></>}
+  {page === "Ações" && <section className="panel page-panel"><h3>Central de ações</h3><p>Organize e acompanhe as atividades da empresa.</p>{tasks.map(t => <div className="action-item" key={t.id}><div><strong>{t.title}</strong><p>{t.detail}</p><small>Status: {t.status}</small></div>{t.status === "Pendente" ? <button onClick={() => updateTask(t.id, "Concluída")}>Concluir</button> : <span className="success">✓ Concluída</span>}</div>)}</section>}
+  {page === "Aprovações" && <section className="panel page-panel"><h3>Central de aprovações</h3><p>Você decide quais ações propostas poderão avançar.</p>{approvals.map(a => <div className="action-item" key={a.id}><div><strong>{a.title}</strong><p>{a.detail}</p><small>Status: {a.status}</small></div>{a.status === "Aguardando" ? <div className="approval-buttons"><button onClick={() => updateApproval(a.id, "Aprovada")}>Aprovar</button><button className="reject" onClick={() => updateApproval(a.id, "Rejeitada")}>Rejeitar</button></div> : <strong>{a.status}</strong>}</div>)}</section>}
+  {page === "Metas" && <section className="panel page-panel"><h3>Meta de faturamento mensal</h3><p>Defina sua meta e informe o faturamento realizado.</p><label>Meta desejada (R$)</label><input type="number" value={goal} onChange={e => setGoal(Math.max(1, Number(e.target.value)))}/><label>Faturamento realizado (R$)</label><input type="number" value={revenue} onChange={e => setRevenue(Math.max(0, Number(e.target.value)))}/><h3>Progresso: {progress}%</h3><div className="progress-track"><div style={{width: `${progress}%`}}/></div><p>R$ {revenue.toLocaleString("pt-BR")} de R$ {goal.toLocaleString("pt-BR")}</p></section>}
+  {page === "Inteligência Artificial" && <section className="panel page-panel"><div className="ai-icon">✦</div><h3>Assistente EVOLUI AI</h3><p>Converse com seu consultor empresarial.</p><div className="chat-messages">{messages.map((m,i) => <div key={i} className={`chat-message ${m.role}`}>{m.text}</div>)}</div><form className="chat-form" onSubmit={sendMessage}><input value={message} onChange={e => setMessage(e.target.value)} placeholder="Pergunte sobre sua empresa..."/><button type="submit">Enviar ➤</button></form></section>}
+  {["Financeiro", "Clientes", "Configurações"].includes(page) && <section className="panel page-panel"><div className="ai-icon">✦</div><h3>{page}</h3><p>Este módulo será desenvolvido na próxima etapa. Os dados da empresa serão configurados aqui.</p></section>}</main></div>;
+}
+export default App;
